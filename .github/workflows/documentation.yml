@@ -19,47 +19,88 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18.x'
+        node-version: '18'
         cache: 'npm'
     
     - name: Install dependencies
-      run: npm ci
+      run: |
+        if [ -f "package.json" ]; then
+          npm ci
+        else
+          echo "No package.json found, skipping npm install"
+        fi
     
     - name: Build documentation
       run: |
         echo "Building documentation..."
         mkdir -p public/docs
-        # Simulate documentation build process
-        find . -name "*.md" -exec cp {} public/docs/ \; || echo "No markdown files found"
+        
+        # Copy all markdown files to documentation
+        if find . -name "*.md" -maxdepth 2 | grep -q .; then
+          find . -name "*.md" -maxdepth 2 -exec cp {} public/docs/ \;
+          echo "Markdown files copied to documentation"
+        else
+          echo "No markdown files found at top level"
+        fi
+        
+        # Create main documentation index
         echo "# Project Documentation" > public/docs/index.md
+        echo "" >> public/docs/index.md
+        echo "## Available Documentation" >> public/docs/index.md
+        echo "" >> public/docs/index.md
+        
+        # List all documentation files
+        for file in public/docs/*.md; do
+          if [ "$file" != "public/docs/index.md" ]; then
+            filename=$(basename "$file" .md)
+            echo "- [$filename]($filename.md)" >> public/docs/index.md
+          fi
+        done
+        
+        echo "" >> public/docs/index.md
         echo "Built on: $(date)" >> public/docs/index.md
         echo "Documentation build completed"
+        
+        # Show what was built
+        ls -la public/docs/
     
     - name: Upload documentation artifact
       uses: actions/upload-artifact@v4
       with:
         name: documentation
         path: public/docs/
+        retention-days: 1
 
   deploy-docs:
     runs-on: ubuntu-latest
     needs: build-docs
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Download documentation
+    - name: Download documentation artifact
       uses: actions/download-artifact@v4
       with:
         name: documentation
+        path: ./public/docs
+    
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+    
+    - name: Upload artifact to Pages
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: ./public/docs
     
     - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./public/docs
-        force_orphan: true
-    
+      id: deployment
+      uses: actions/deploy-pages@v4
+      
     - name: Documentation deployment status
-      run: echo "Documentation deployed successfully at $(date)"
+      run: |
+        echo "Documentation deployed successfully!"
+        echo "Deployment time: $(date)"
+        echo "Pages URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
