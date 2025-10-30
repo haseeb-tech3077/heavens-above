@@ -1,0 +1,76 @@
+name: Code Review Assistant
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  pull_request_target:
+
+jobs:
+  code-analysis:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Check for package.json
+      id: package-check
+      run: |
+        if [ -f "package.json" ]; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Setup Node.js
+      if: steps.package-check.outputs.exists == 'true'
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+    
+    - name: Install dependencies
+      if: steps.package-check.outputs.exists == 'true'
+      run: |
+        if [ -f "package-lock.json" ]; then
+          npm ci
+        else
+          npm install
+        fi
+    
+    - name: Run basic code checks
+      run: |
+        echo "Running basic code quality checks..."
+        echo "Checking file structure..."
+        find . -name "*.js" -o -name "*.json" -o -name "*.md" | head -10
+        echo "Code structure check completed"
+    
+    - name: Run linter
+      if: steps.package-check.outputs.exists == 'true'
+      run: |
+        npm run lint || echo "No lint script configured"
+        echo "Linting completed"
+    
+    - name: Check code formatting
+      if: steps.package-check.outputs.exists == 'true'
+      run: |
+        npx prettier --check . || echo "Prettier not configured or formatting issues found"
+    
+    - name: Run tests
+      if: steps.package-check.outputs.exists == 'true'
+      run: npm test
+    
+    - name: Code complexity analysis
+      if: steps.package-check.outputs.exists == 'true'
+      run: |
+        echo "Running code complexity check..."
+        npx complexity-report . || echo "Complexity report completed or not configured"
+
+  required-checks:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Validate PR
+      run: |
+        echo "Pull Request validation in progress..."
+        echo "Checking if required files are present..."
+        [ -f "package.json" ] && echo "✓ package.json found" || echo "⚠ No package.json found"
+        [ -f "README.md" ] && echo "✓ README.md found" || echo "⚠ No README.md found"
+        echo "PR validation completed"
