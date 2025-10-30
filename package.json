@@ -1,18 +1,12 @@
 {
   "name": "heavens-above",
   "version": "1.0.0",
-  "description": "Web application for astronomical data",
-  "main": "index.js",
+  "description": "Astronomical data web application",
   "scripts": {
-    "test": "echo \"No tests specified\" && exit 0",
-    "lint": "echo \"No linting configured\" && exit 0",
-    "build": "echo \"No build process\" && exit 0",
-    "cleanup": "echo \"Cleanup completed\""
+    "test": "echo 'No tests' && exit 0",
+    "lint": "echo 'No linting' && exit 0",
+    "build": "echo 'No build' && exit 0"
   },
-  "keywords": [],
-  "author": "",
-  "license": "MIT",
-  "devDependencies": {
-    "jest": "^29.0.0"
-  }
+  "devDependencies": {},
+  "dependencies": {}
 }
