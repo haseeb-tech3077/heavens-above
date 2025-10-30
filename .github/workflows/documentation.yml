@@ -2,105 +2,105 @@ name: Documentation Deployment
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
     paths:
       - 'docs/**'
       - '*.md'
-      - 'package.json'
+      - 'README.md'
   workflow_dispatch:
 
 jobs:
-  build-docs:
+  deploy-docs:
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: |
-        if [ -f "package.json" ]; then
-          npm ci
-        else
-          echo "No package.json found, skipping npm install"
-        fi
+    - name: Checkout repository
+      uses: actions/checkout@v4
     
     - name: Build documentation
       run: |
-        echo "Building documentation..."
-        mkdir -p public/docs
+        echo "🚀 Building documentation site..."
         
-        # Copy all markdown files to documentation
-        if find . -name "*.md" -maxdepth 2 | grep -q .; then
-          find . -name "*.md" -maxdepth 2 -exec cp {} public/docs/ \;
-          echo "Markdown files copied to documentation"
-        else
-          echo "No markdown files found at top level"
-        fi
+        # Create site directory
+        mkdir -p _site
         
-        # Create main documentation index
-        echo "# Project Documentation" > public/docs/index.md
-        echo "" >> public/docs/index.md
-        echo "## Available Documentation" >> public/docs/index.md
-        echo "" >> public/docs/index.md
+        # Create simple documentation
+        cat > _site/index.html << 'EOF'
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>heavens-above Documentation</title>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+                .container { max-width: 800px; margin: 0 auto; }
+                header { border-bottom: 2px solid #0366d6; padding-bottom: 20px; }
+                h1 { color: #0366d6; }
+                .file-list { background: #f6f8fa; padding: 20px; border-radius: 6px; margin: 20px 0; }
+                .file-item { padding: 8px 0; }
+                .timestamp { color: #586069; font-size: 14px; margin-top: 30px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <header>
+                    <h1>📚 heavens-above Documentation</h1>
+                    <p>Project documentation and resources</p>
+                </header>
+                
+                <div class="file-list">
+                    <h3>Available Documents:</h3>
+        EOF
         
-        # List all documentation files
-        for file in public/docs/*.md; do
-          if [ "$file" != "public/docs/index.md" ]; then
-            filename=$(basename "$file" .md)
-            echo "- [$filename]($filename.md)" >> public/docs/index.md
+        # Add markdown files
+        for file in *.md; do
+          if [ -f "$file" ]; then
+            echo "<div class='file-item'>📄 <a href='$file'>$file</a></div>" >> _site/index.html
+            cp "$file" _site/
           fi
         done
         
-        echo "" >> public/docs/index.md
-        echo "Built on: $(date)" >> public/docs/index.md
-        echo "Documentation build completed"
+        # Copy docs folder if exists
+        if [ -d "docs" ]; then
+          echo "<div class='file-item'>📁 <a href='docs/'>docs/</a> (documentation folder)</div>" >> _site/index.html
+          cp -r docs _site/
+        fi
         
-        # Show what was built
-        ls -la public/docs/
+        # Close HTML
+        cat >> _site/index.html << EOF
+                </div>
+                
+                <div class="timestamp">
+                    <p>Last updated: $(date)</p>
+                    <p>Built with GitHub Actions</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        EOF
+        
+        echo "✅ Documentation built successfully!"
+        ls -la _site/
     
-    - name: Upload documentation artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: documentation
-        path: public/docs/
-        retention-days: 1
-
-  deploy-docs:
-    runs-on: ubuntu-latest
-    needs: build-docs
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    
-    steps:
-    - name: Download documentation artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: documentation
-        path: ./public/docs
-    
-    - name: Setup Pages
+    - name: Setup GitHub Pages
       uses: actions/configure-pages@v4
     
-    - name: Upload artifact to Pages
+    - name: Upload to GitHub Pages
       uses: actions/upload-pages-artifact@v3
       with:
-        path: ./public/docs
+        path: ./_site
     
     - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v4
-      
-    - name: Documentation deployment status
+    
+    - name: Success message
       run: |
-        echo "Documentation deployed successfully!"
-        echo "Deployment time: $(date)"
-        echo "Pages URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+        echo "🎉 Documentation deployed to GitHub Pages!"
+        echo "📖 Visit: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
