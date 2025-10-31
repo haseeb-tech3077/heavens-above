@@ -1,10 +1,12 @@
 {
   "version": 2,
-  "name": "heavens-above-assignment",
   "builds": [
     {
-      "src": "public/**/*",
-      "use": "@vercel/static"
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "public"
+      }
     }
   ],
   "routes": [
@@ -12,6 +14,5 @@
       "src": "/(.*)",
       "dest": "/public/$1"
     }
-  ],
-  "outputDirectory": "public"
+  ]
 }

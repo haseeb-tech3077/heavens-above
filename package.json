@@ -1,11 +1,9 @@
 {
-  "name": "heavens-above",
+  "name": "heavens-above-assignment",
   "version": "1.0.0",
-  "description": "Astronomical data web application",
+  "description": "GitHub Actions Assignment Deployment",
   "scripts": {
-    "test": "echo 'No tests' && exit 0",
-    "lint": "echo 'No linting' && exit 0",
-    "build": "echo 'No build' && exit 0"
+    "build": "mkdir -p public && cp -r *.html *.css public/ 2>/dev/null || echo 'Building custom site...' && node build.js"
   },
   "devDependencies": {},
   "dependencies": {}
