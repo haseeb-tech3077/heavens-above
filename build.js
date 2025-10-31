@@ -157,8 +157,7 @@ const htmlContent = `<!DOCTYPE html>
         <div class="deploy-info">
             <p><strong>Deployment Info:</strong> Automated via GitHub Actions</p>
             <p><strong>Repository:</strong> ${process.env.GITHUB_REPOSITORY || 'heavens-above'}</p>
-            <p><strong>Student Project:</strong> CI/CD Automation - SUCCESS</p>
-            <p><strong>Build Date:</strong> ${new Date().toISOString()}</p>
+            <p><strong>Student Project:</strong> Abdul Haseeb </p>
         </div>
     </div>
     
